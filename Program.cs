@@ -1,121 +1,231 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
-public class Book
+class Student
 {
-    public string Title { get; set; }
-    public string ISBN { get; set; }  
-    public string Author { get; set; }
+    public string ID { get; set; }
+    public string StudentName { get; set; }
+    public bool IsGraduated { get; set; }
+
+    public Student(string id, string name)
+    {
+        ID = id;
+        StudentName = name;
+        IsGraduated = false;
+    }
 
     public override string ToString()
     {
-        return $"Title: {Title}, ISBN: {ISBN}, Author: {Author}";
+        return $"ID: {ID}, Name: {StudentName}, Graduated: {IsGraduated}";
     }
 }
 
-public class Library
+class Faculty
 {
-    private List<Book> books = new List<Book>();
+    public string FacultyName { get; set; }
+    public string Field { get; set; }
+    private List<Student> CurrentStudents { get; set; }
+    private List<Student> GraduatedStudents { get; set; }
 
-    public void AddBook()
+    public Faculty(string name, string field)
     {
-        Book newBook = new Book();
+        FacultyName = name;
+        Field = field;
+        CurrentStudents = new List<Student>();
+        GraduatedStudents = new List<Student>();
+    }
 
-        Console.Write("Enter book title: ");
-        newBook.Title = Console.ReadLine();
+    public void add_students(Student student)
+    {
+        CurrentStudents.Add(student);
+    }
+
+    public void graduate_student(string student_id)
+    {
+        var student = CurrentStudents.FirstOrDefault(s => s.ID == student_id);
+        if (student != null)
+        {
+            student.IsGraduated = true;
+            CurrentStudents.Remove(student);
+            GraduatedStudents.Add(student);
+        }
+        else
+        {
+            Console.WriteLine("Student not found in this faculty.");
+        }
+    }
+
+    public void display_students()
+    {
+        Console.WriteLine($"Current students in {FacultyName}:");
+        foreach (var student in CurrentStudents)
+        {
+            Console.WriteLine(student);
+        }
+    }
+
+    public void display_graduated()
+    {
+        Console.WriteLine($"Graduated students from {FacultyName}:");
+        foreach (var student in GraduatedStudents)
+        {
+            Console.WriteLine(student);
+        }
+    }
+
+    public bool has_students(string student_id)
+    {
+        return CurrentStudents.Any(s => s.ID == student_id) || GraduatedStudents.Any(s => s.ID == student_id);
+    }
+}
+
+class University
+{
+    private List<Faculty> Faculties;
+
+    public University()
+    {
+        Faculties = new List<Faculty>();
+    }
+
+    public void create_faculty(string name, string field)
+    {
+        Faculties.Add(new Faculty(name, field));
+    }
+
+    public void add_student(string faculty_name, Student student)
+    {
+        var faculty = Faculties.FirstOrDefault(f => f.FacultyName == faculty_name);
+        if (faculty != null)
+        {
+            faculty.add_students(student);
+        }
+        else
+        {
+            Console.WriteLine("Faculty not found.");
+        }
+    }
+
+    public void graduate_student(string faculty_name, string student_id)
+    {
+        var faculty = Faculties.FirstOrDefault(f => f.FacultyName == faculty_name);
+        if (faculty != null)
+        {
+            faculty.graduate_student(student_id);
+        }
+        else
+        {
+            Console.WriteLine("Faculty not found.");
+        }
+    }
+
+    public void display_faculties()
+    {
+        Console.WriteLine("Faculties:");
+        foreach (var faculty in Faculties)
+        {
+            Console.WriteLine($"{faculty.FacultyName} ({faculty.Field})");
+        }
+    }
+
+    public void faculties_by_field(string field)
+    {
+        Console.WriteLine($"Faculties in the field of {field}:");
+        foreach (var faculty in Faculties.Where(f => f.Field == field))
+        {
+            Console.WriteLine(faculty.FacultyName);
+        }
+    }
+
+    public void faculty_by_student(string student_id)
+    {
+        foreach (var faculty in Faculties)
+        {
+            if (faculty.has_students(student_id))
+            {
+                Console.WriteLine($"Student found in faculty: {faculty.FacultyName}");
+                return;
+            }
+        }
+        Console.WriteLine("Student not found in any faculty.");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        var university = new University();
 
         while (true)
         {
-            Console.Write("Enter book ISBN (13 digits with spaces allowed): ");
-            string isbnInput = Console.ReadLine();
-
-            string cleanedIsbn = isbnInput.Replace(" ", "");
-
-            if (cleanedIsbn.Length == 13 && long.TryParse(cleanedIsbn, out _))
-            {
-                newBook.ISBN = isbnInput; 
-                break;
-            }
-            else
-            {
-                Console.WriteLine("Invalid ISBN. Please enter a 13-digit number (spaces are allowed).");
-            }
-        }
-
-        Console.Write("Enter book author: ");
-        newBook.Author = Console.ReadLine();
-
-        books.Add(newBook);
-        Console.WriteLine("Book added successfully!\n");
-    }
-
-    public void DeleteBook()
-    {
-        Console.Write("Enter ISDN of the book to delete: ");
-        string titleToDelete = Console.ReadLine();
-
-        Book bookToRemove = books.Find(book => book.ISBN == titleToDelete);
-        if (bookToRemove != null)
-        {
-            books.Remove(bookToRemove);
-            Console.WriteLine("Book deleted successfully!\n");
-        }
-        else
-        {
-            Console.WriteLine("Book ISBN not found!\n");
-        }
-    }
-
-    public void ShowBooks()
-    {
-        if (books.Count > 0)
-        {
-            Console.WriteLine("Books in the library:");
-            foreach (Book book in books)
-            {
-                Console.WriteLine(book.ToString());
-            }
-        }
-        else
-        {
-            Console.WriteLine("No books in the library.\n");
-        }
-    }
-}
-
-public class Program
-{
-    public static void Main()
-    {
-        Library library = new Library();
-        bool exit = false;
-
-        while (!exit)
-        {
             Console.WriteLine("\nChoose an option:");
-            Console.WriteLine("1. Add a book");
-            Console.WriteLine("2. Delete a book");
-            Console.WriteLine("3. Show all books");
-            Console.WriteLine("4. Exit");
+            Console.WriteLine("1. Create Faculty");
+            Console.WriteLine("2. Add Student");
+            Console.WriteLine("3. Graduate Student");
+            Console.WriteLine("4. Display Faculties");
+            Console.WriteLine("5. Display Students by Faculty");
+            Console.WriteLine("6. Search Faculty by Student");
+            Console.WriteLine("7. Display Faculties by Field");
+            Console.WriteLine("0. Exit");
 
-            string choice = Console.ReadLine();
-
+            var choice = Console.ReadLine();
             switch (choice)
             {
                 case "1":
-                    library.AddBook();
+                    Console.Write("Enter faculty name: ");
+                    var facultyName = Console.ReadLine();
+                    Console.Write("Enter faculty field: ");
+                    var facultyField = Console.ReadLine();
+                    university.create_faculty(facultyName, facultyField);
                     break;
                 case "2":
-                    library.DeleteBook();
+                    Console.Write("Enter faculty name: ");
+                    var facultyForStudent = Console.ReadLine();
+                    Console.Write("Enter student ID: ");
+                    var studentId = Console.ReadLine();
+                    Console.Write("Enter student name: ");
+                    var studentName = Console.ReadLine();
+                    university.add_student(facultyForStudent, new Student(studentId, studentName));
                     break;
                 case "3":
-                    library.ShowBooks();
+                    Console.Write("Enter faculty name: ");
+                    var gradFaculty = Console.ReadLine();
+                    Console.Write("Enter student ID: ");
+                    var gradStudentId = Console.ReadLine();
+                    university.graduate_student(gradFaculty, gradStudentId);
                     break;
                 case "4":
-                    exit = true;
+                    university.display_faculties();
                     break;
+                case "5":
+                    Console.Write("Enter faculty name: ");
+                    var facultyToDisplay = Console.ReadLine();
+                    var faculty = university.Faculties.FirstOrDefault(f => f.FacultyName == facultyToDisplay);
+                    if (faculty != null)
+                    {
+                        faculty.display_students();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Faculty not found.");
+                    }
+                    break;
+                case "6":
+                    Console.Write("Enter student ID: ");
+                    var searchStudentId = Console.ReadLine();
+                    university.faculty_by_student(searchStudentId);
+                    break;
+                case "7":
+                    Console.Write("Enter field name: ");
+                    var fieldName = Console.ReadLine();
+                    university.faculties_by_field(fieldName);
+                    break;
+                case "0":
+                    return;
                 default:
-                    Console.WriteLine("Invalid option, try again.");
+                    Console.WriteLine("Invalid option. Please try again.");
                     break;
             }
         }
